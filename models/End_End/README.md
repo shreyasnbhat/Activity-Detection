@@ -10,3 +10,30 @@ Epoch 2/2
 - time_distributed_14_loss: 0.7086 - dense_1_acc: 0.9199 - time_distributed_14_acc: 0.7680
 - val_loss: 0.6316 - val_dense_1_loss: 0.2862 - val_time_distributed_14_loss: 0.6910 - val_dense_1_acc: 0.9474
 - val_time_distributed_14_acc: 0.8151
+
+
+
+### Model: temp_i.h5
+#### UCF Unseen Set
+temp0.h5 81.81818181818183
+temp4.h5 90.9090909090909
+temp5.h5 86.36363636363636
+temp7.h5 90.9090909090909
+temp8.h5 81.81818181818183
+temp9.h5 90.9090909090909
+
+#### Part Training Set
+temp0.h5 85.0
+temp4.h5 80.0
+temp5.h5 80.0
+temp7.h5 80.0
+temp8.h5 85.0
+temp9.h5 75.0
+
+#### Full training set
+temp0.h5 90.990990990991
+temp4.h5 94.5945945945946
+temp5.h5 94.5945945945946
+temp7.h5 95.4954954954955
+temp8.h5 94.5945945945946
+temp9.h5 91.8918918918919

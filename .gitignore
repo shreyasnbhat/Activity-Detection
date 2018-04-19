@@ -1,0 +1,8 @@
+Actual/*
+Images/*
+Numpy/*
+UCF_Unseen/*
+UCF_Images/*
+*.ipynb_checkpoints
+Videos/*
+__pycache__/*
