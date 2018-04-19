@@ -5,8 +5,12 @@ import os
 from keras import backend as K
 from keras.layers import Conv2D, Dropout, LSTM, BatchNormalization, Input,Activation, MaxPool2D, Flatten, Dense,TimeDistributed
 from keras.models import Model, load_model
+from keras.layers.convolutional import ZeroPadding2D
 from keras import metrics
 import h5py
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 
 VIDEOS_DIR = './Videos/'
 IMAGES_DIR = './Images/'
@@ -19,7 +23,7 @@ def pre_compute():
     global class_to_index
     global videos
 
-    classes = list(os.listdir(VIDEOS_DIR))
+    classes = ['Kicking', 'Riding-Horse', 'Running', 'SkateBoarding', 'Swing-Bench', 'Lifting', 'Swing-Side', 'Walking', 'Golf-Swing']
     print(classes)
 
     for i in range(len(classes)):
@@ -46,87 +50,57 @@ def convert_to_one_hot(Y, C):
     Y = np.eye(C)[Y.reshape(-1)]
     return Y
 
-def pad_end_to_end(X_train_images_class,pad_len):
-    length = X_train_images_class.shape[0]
+def pad(X_train_images_class,max_len):
+    length = len(X_train_images_class)
     pad_arr = np.zeros((X_train_images_class.shape[1:4]),dtype=np.uint8)
     X_train_images_class = list(X_train_images_class)
-    for i in range(pad_len-length):
+    for i in range(max_len-length):
         X_train_images_class.append(pad_arr)
     return np.array(X_train_images_class,dtype=np.uint8)
 
-def build_dataset_end_to_end(image_size, pad_len = 170):
+# Don't do one hot
+def evaluate(model, X_test,Y_test,verbose = False):
     global classes
-    global videos
-
-    X_train_images = []
-    Y_train_images = []
-    for i in range(len(classes)):
-        cls = classes[i]
-        for j in range(len(videos[i])):
-            vid = videos[i][j]
-            video_r = VIDEOS_DIR+cls+'/'+ vid +'/'
-            image_r = IMAGES_DIR+cls+'/'+ vid +'/'
-            filelist = sorted(list(os.listdir(image_r)))
-            X_train_images_class = []
-            for file in filelist:
-                if file.endswith(".png"):
-                    image = load_image(image_r+file,image_size)
-                    X_train_images_class.append(image)
-            X_train_images_class = pad_end_to_end(np.array(X_train_images_class,dtype=np.uint8),pad_len) # Pad till 170 frames
-            assert(X_train_images_class.shape == (170,172, 172, 3))
-            X_train_images.append(X_train_images_class)
-            Y_train_images.append(i)
-            print("Processed",videos[i][j],"of","class",classes[i])
-    return np.array(X_train_images,dtype=np.uint8),np.array(Y_train_images,dtype=np.uint8)
-
-def end_to_end(input_shape):
-    X_input = Input(input_shape)
-    X = TimeDistributed(BatchNormalization(name = 'BatchNorm_1'))(X_input)
-    X = TimeDistributed(Conv2D(32, (7, 7), strides = (2, 2), activation='relu', name="Conv_1a", padding="same"))(X)
-    X = TimeDistributed(Conv2D(32, (3, 3), strides = (2, 2), activation='relu', name="Conv_1b", padding="same"))(X)
-    X = TimeDistributed(MaxPool2D((2, 2), name = "Pool_1"))(X)
-
-    X = TimeDistributed(Conv2D(64, (3, 3), name ="Conv_2a", activation='relu', padding = "same"))(X)
-    X = TimeDistributed(Conv2D(64, (3, 3), name ="Conv_2b", activation='relu', padding = "same"))(X)
-    X = TimeDistributed(MaxPool2D((2, 2), name = "Pool_2"))(X)
-
-    X = TimeDistributed(Conv2D(256,(3,3), name='Conv_3a'))(X)
-    X = TimeDistributed(MaxPool2D((4, 4), name = "Pool_3"))(X)
-
-    X = TimeDistributed(Flatten())(X)
-
-    X = LSTM(32, return_sequences=True)(X)
-    X = LSTM(32, return_sequences=False)(X)
-    X = Dense(9, activation='softmax')(X)
-
-    return Model(X_input,X)
+    count = 0
+    for i in range(len(X_test)):
+        pred = model.predict(X_test[i])[0]
+        #print(pred[0].shape, pred[1].shape)
+        #break
+        max_pred = [np.argmax(i) for i in pred]
+        counts = np.bincount(max_pred)
+        class_pred = np.argmax(counts)
+        #class_pred = max_pred
+        actual = Y_test[i]
+        if verbose:
+            print("Max Preds time", max_pred)
+            print("Pred",classes[class_pred],"Actual",classes[actual])
+            print()
+        if class_pred == actual:
+            count += 1
+    return count * 100 /float(len(Y_test)) 
 
 
 if __name__ == '__main__' :
-
     pre_compute()
     print("Pre Computation Done")
-    e2e = end_to_end((170, 172, 172, 3))
-    print(e2e.summary())
+    
+    X_train = np.load('./Numpy/End2End/X_train_10_40.npy')
+    Y_train = np.load('./Numpy/End2End/Y_train_10_40.npy')
+    Y_train = convert_to_one_hot(Y_train, 9)
+    print("Shapes: X_train " + str(X_train.shape) + " Y_train " + str(Y_train.shape))
+    Y_train2 = np.tile(Y_train, (40, 1, 1))
+    Y_train2 = Y_train2.transpose(1, 0, 2)
+    print("Loaded dataset")
+    
+    model = load_model('./models/End_End/model_time_12.h5')
+    
+    for i in range(5):
+        model.fit(X_train, [Y_train, Y_train2], epochs =1, batch_size = 64, validation_split = 0.2)
+        model.save('temp' + str(i) + '.h5')
+    
+    X_test = np.load('./Numpy/End2End/X_test_10_40.npy')
+    Y_test = np.load('./Numpy/End2End/Y_test_10_40.npy')
+    
+    print("{Test Accuracy : " + str(evaluate(model, X_test, Y_test, verbose=True)) +" }")
 
-    try:
-        X = np.load('X_e2e.npy')
-        Y = np.load('Y_e2e.npy')
-    except FileNotFoundError:
-        X,Y = build_dataset_end_to_end((172, 172))
-        np.save('X_e2e.npy',X)
-        np.save('Y_e2e.npy',Y)
 
-    Y = convert_to_one_hot(Y,9)
-    print("Shape of X" , X.shape)
-    print("Shape of Y" , Y.shape)
-
-    e2e.compile(loss='categorical_crossentropy',
-            metrics=['accuracy'],
-            optimizer='adam')
-
-    X_train_e2e,Y_train_e2e = permute(X,Y)
-
-    for i in range(epochs):
-        e2e.fit(X_train_e2e, Y_train_e2e, epochs=1, batch_size = 8, validation_split=0.05)
-        e2e.save('epoch_e2e'+str(i)+'.h5')
