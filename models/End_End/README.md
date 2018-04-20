@@ -15,12 +15,14 @@ Epoch 2/2
 
 ### Model: temp_i.h5
 #### UCF Unseen Set
-- temp0.h5 81.81818181818183
-- temp4.h5 90.9090909090909
-- temp5.h5 86.36363636363636
-- temp7.h5 90.9090909090909
-- temp8.h5 81.81818181818183
-- temp9.h5 90.9090909090909
+| Model | Accuracy |
+| ----- | -------- |
+| temp0.h5 81.81 |
+| temp4.h5 90.90 |
+| temp5.h5 86.36 |
+| temp7.h5 90.90 |
+| temp8.h5 81.81 |
+| temp9.h5 90.90 |
 
 #### Part Training Set
 - temp0.h5 85.0
