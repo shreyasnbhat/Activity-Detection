@@ -58,13 +58,15 @@ def build_dataset_end_to_end(image_size=(172, 172), max_len = 40, stride = 10):
                 vid = videos[i][j]
                 video_r = VIDEOS_DIR+cls+'/'+ vid +'/'
                 image_r = IMAGES_DIR+cls+'/'+ vid +'/'
+                image_jpeg = IMAGES_DIR+cls+'/'+ vid +'/jpeg/'
                 filelist = sorted(list(os.listdir(image_r)))
                 X_train_images_class = []
                 for file in filelist:
                     if file.endswith(".png"):
                         image = load_image(image_r+file,image_size)
                         X_train_images_class.append(image)
-                X_train_images_class = np.array(X_train_images_class)        
+                X_train_images_class = np.array(X_train_images_class)
+                
                 X_test_frames = []                                
                 for k in range(0,len(X_train_images_class),stride):
                     lower = k
@@ -85,7 +87,39 @@ def build_dataset_end_to_end(image_size=(172, 172), max_len = 40, stride = 10):
                             Y_train_images.append(i)
                         else:
                             X_test_frames.append(X_train_images_class[lower:upper])
-                        #print("Added frames" , lower , "to" , upper)        
+                        #print("Added frames" , lower , "to" , upper)
+                X_train_jpeg_class = []
+                try:
+                    filelist = sorted(list(os.listdir(image_jpeg)))
+                except FileNotFoundError:
+                    print('Not found ' + str(image_jpeg))
+                    continue
+                for file in filelist:
+                     if file.endswith(".jpg"):
+                        image = load_image(image_jpeg+file,image_size)
+                        X_train_jpeg_class.append(image)
+                X_train_jpeg_class = np.array(X_train_jpeg_class)
+                X_test_frames = [] 
+                for k in range(0,len(X_train_jpeg_class),stride):
+                    lower = k
+                    upper = min(len(X_train_jpeg_class),k+max_len)
+                    if upper == len(X_train_jpeg_class):
+                        if vid not in test:                
+                            X_train_images.append(pad(X_train_jpeg_class[lower:upper],max_len))
+                            Y_train_images.append(i)
+                        else:
+                            X_test_frames.append(pad(X_train_jpeg_class[lower:upper],max_len))
+                            X_test_images.append(np.array(X_test_frames))        
+                            Y_test_images.append(i)
+                        #print("Padded frames" , lower , "to" , upper)
+                        break
+                    else:
+                        if vid not in test:                
+                            X_train_images.append(X_train_jpeg_class[lower:upper])
+                            Y_train_images.append(i)
+                        else:
+                            X_test_frames.append(X_train_jpeg_class[lower:upper])
+                            
                 print("Processed",videos[i][j],"of","class",classes[i])
         X_train = np.array(X_train_images,dtype=np.uint8)
         Y_train = np.array(Y_train_images,dtype=np.uint8)
