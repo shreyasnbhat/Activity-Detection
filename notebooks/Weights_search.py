@@ -22,17 +22,17 @@ def create_model(X_train, Y_train, X_test, Y_test):
     Y_train2 = np.tile(Y_train, (40, 1, 1))
     Y_train2 = Y_train2.transpose((1, 0, 2))
     print(Y_train2.shape)
-
-    for weight in [0.2, 0.4, 0.6, 0.8]:
-        model = load_model('../models/End_End/temp0_ke_baad_3_epoch_phir_ulta_weights.h5')
-        model.loss_weights = [1, weight]
-        model.fit(X_train, [Y_train, Y_train2],
-                  batch_size=64,
-                  epochs=1,
-                  verbose=2)
-        acc = evaluate(model, X_test, Y_test)
-        print('Test accuracy:', acc)
-        model.save('ulta_'+str(weight)+'.h5')
+    
+    for i in range(3):
+	    model = load_model('ulta2_2.h5')
+	    model.loss_weights = [1, 0.2]
+	    model.fit(X_train, [Y_train, Y_train2],
+		          batch_size=64,
+		          epochs=1,
+		          verbose=2)
+	    acc = evaluate(model, X_test, Y_test)
+	    print('Test accuracy:', acc)
+	    model.save('ulta23_'+str(i)+'.h5')
 
 create_model(X_train, Y_train, X_test,Y_test)
 
