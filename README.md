@@ -1,5 +1,2 @@
 # Activity-Detection
-NNFL Course Project
-
-### Models
-- LSTM Strided Conv : `models/LSTM_Strided/500ep_valacc_97_single_LSTM.h5` works pretty good. Need to test further  
+Multiple approaches to solving a video classification problem like End to End training, Convoloutional and LSTM networks trained independently, Dilated Convolution etc.
